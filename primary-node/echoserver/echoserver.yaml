@@ -1,0 +1,54 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: mysite-echoserver
+  labels:
+    app: mysite-echoserver
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mysite-echoserver
+  template:
+    metadata:
+      labels:
+        app: mysite-echoserver
+    spec:
+      containers:
+      - name: echoserver
+        image: k8s.gcr.io/echoserver:1.4
+        ports:
+        - containerPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mysite-echoserver-service
+spec:
+  selector:
+    app: mysite-echoserver
+  ports:
+    - protocol: TCP
+      port: 8080
+---
+apiVersion: networking.k8s.io/v1beta1
+kind: Ingress
+metadata:
+  name: mysite-echoserver-ingress
+  annotations:
+    kubernetes.io/ingress.class: "traefik"
+    # ingress.kubernetes.io/is-development: "false"
+    ingress.kubernetes.io/hsts-preload: "true"
+    ingress.kubernetes.io/hsts-include-subdomains: "true"
+    ingress.kubernetes.io/hsts-max-age: "0"
+    ingress.kubernetes.io/ssl-redirect: "true"
+    # https://docs.traefik.io/v1.5/configuration/backends/kubernetes/
+spec:
+  rules:
+  - host: echo.local
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: mysite-echoserver-service
+          servicePort: 8080
